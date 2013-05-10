@@ -1,0 +1,77 @@
+#!/bin/bash
+
+# vim:set ts=2 sw=4 noexpandtab:
+# <cesar@pissedoffadmins.com> 2013
+
+# http://wiki.dreamhost.com/Application_programming_interface
+
+set -e
+set -o pipefail
+NAME=$(basename $0)
+
+version()
+{
+  local VER="0.01"
+  printf -- "%s\n" "${NAME} version ${VER}"
+  printf -- "%s\n" "Copyright (C) 2013 cesar@pissedoffadmins.com"
+  printf -- "%s\n" "This program comes with ABSOLUTELY NO WARRANTY."
+  printf -- "%s\n" "This is free software, and you are welcome to redistribute it."
+  printf -- "%s\n"
+}
+
+descrip()
+{
+  cat <<EOL
+Stuff Stuff
+EOL
+}
+
+usage()
+{
+  clear
+  printf -- "%s\n"
+  printf -- "%s\n" " "
+}
+
+### the meaty nougat begins here.
+case "$(uname 2>/dev/null)" in
+  'Linux') TMP_FILE=$(mktemp --tmpdir dhdns.$$.XXXXXXXXXX);;
+  'Darwin') TMP_FILE=$(mktemp dhdns.$$.XXXXXXXXXX);;
+esac
+trap "rm -rf ${TMP_FILE}" 0 1 2 3 15
+
+while [ $# -ne 0 ]; do
+  A=${1}; B=${2};
+  case "${A}" in
+    "-k"|"--key"|"key") KEY="${B}"; shift;;
+    "-d"|"--domain"|"domain") DOMAIN="${B}"; shift;;
+    "-a"|"--api"|"api") API="${B}"; shift;;
+    "-o"|"--option"|"option") OPTION="${B}"; shift;;
+  esac
+  shift;
+done
+
+## set $KEY, $DOMAIN & $API address if not set at cli
+[ -z ${KEY} ] && KEY="<SET API KEY HERE TO AUTOMATE>"
+[ -z ${DOMAIN} ] && DOMAIN="<DOMAIN NAME TO UPDATE>"
+[ -z ${API} ] && API="https://api.dreamhost.com/"
+
+WGET="wget -O- -q "
+wanIP()
+{
+  wget http://ipecho.net/plain -O - -q | xargs
+}
+
+checkINFO()
+{
+  ${WGET} ${API}?key=${KEY}\&unique_id=$(uuidgen)\&cmd=dns-list_records\& | \
+    grep ${DOMAIN}
+}
+
+case "${OPTION}" in
+  "check") [[ `wanIP` == `checkINFO | awk '{ print $5 }'` ]] && printf "same\n" || printf "different\n" ;;
+  "update") ;;
+  "delete") ;;
+  "add") ;;
+  "list"|*) checkINFO ;;
+esac
