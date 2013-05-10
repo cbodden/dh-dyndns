@@ -3,8 +3,6 @@
 # vim:set ts=2 sw=4 noexpandtab:
 # <cesar@pissedoffadmins.com> 2013
 
-# http://wiki.dreamhost.com/Application_programming_interface
-
 set -e
 set -o pipefail
 NAME=$(basename $0)
