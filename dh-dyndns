@@ -62,16 +62,25 @@ wanIP()
   wget http://ipecho.net/plain -O - -q | xargs
 }
 
-checkINFO()
+listINFO()
 {
   ${WGET} ${API}?key=${KEY}\&unique_id=$(uuidgen)\&cmd=dns-list_records\& | \
     grep ${DOMAIN}
 }
 
+diffINFO()
+{
+  if [ `wanIP` == `listINFO | awk '{ print $5 }'` ]; then
+    printf -- "%s\n" "IP address is the same"
+  else
+    printf -- "%s\n" "IP address is different"
+  fi
+}
+
 case "${OPTION}" in
-  "check") [[ `wanIP` == `checkINFO | awk '{ print $5 }'` ]] && printf "same\n" || printf "different\n" ;;
+  "check") diffINFO ;;
   "update") ;;
   "delete") ;;
   "add") ;;
-  "list"|*) checkINFO ;;
+  "list"|*) listINFO ;;
 esac
