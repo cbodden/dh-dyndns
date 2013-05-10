@@ -26,12 +26,22 @@ EOL
 
 usage()
 {
-  clear
+  # clear
   printf -- "%s\n"
   printf -- "%s\n" " "
 }
 
+failexit()
+{
+  version; descrip; usage; exit 1;
+}
+
 ### the meaty nougat begins here.
+
+# test for wget & uuidgen
+[[ ! -z $(which wget) ]] || { printf -- "%s\n" "Missing wget"; failexit; }
+[[ ! -z $(which uuidgen) ]] || { printf -- "%s\n" "Missing uuidgen"; failexit; }
+
 case "$(uname 2>/dev/null)" in
   'Linux') TMP_FILE=$(mktemp --tmpdir dhdns.$$.XXXXXXXXXX);;
   'Darwin') TMP_FILE=$(mktemp dhdns.$$.XXXXXXXXXX);;
@@ -55,6 +65,7 @@ done
 [ -z ${API} ] && API="https://api.dreamhost.com/"
 
 WGET="wget -O- -q "
+
 wanIP()
 {
   wget http://ipecho.net/plain -O - -q | xargs
@@ -77,8 +88,8 @@ diffINFO()
 
 case "${OPTION}" in
   "check") diffINFO ;;
-  "update") ;;
-  "delete") ;;
-  "add") ;;
+  "update") printf -- "%s\n" "adding soon" ;;
+  "delete") printf -- "%s\n" "adding soon" ;;
+  "add") printf -- "%s\n" "adding soon" ;;
   "list"|*) listINFO ;;
 esac
