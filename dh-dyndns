@@ -20,14 +20,43 @@ version()
 descrip()
 {
   cat <<EOL
-Stuff Stuff
+This script uses your dreamhost api key (assuming it has dns access), to
+either check, delete, list, or update your ip address for a give record
+in dreamhost. Makes dynamic dns possible with dreamhost except for the
+four hour time to live (ttl). If you need a faster dynamic dns service,
+try DynDNS.
+
 EOL
 }
 
 usage()
 {
   cat <<EOL
-Usage : ${0##*/}
+Usage : ${0##*/} [option] <value>
+  Options:
+    -h | --help   | help        shows this message
+    -d | --domain | domain      domain which will be used (ex.: foo.bar.baz)
+    -k | --key    | key         dreamhost api key
+    -o | --option | option      actions to perform. listed below
+
+  Actions:
+    check           this checks whether existing ip is same as new.
+    delete          this will delete record.
+    exist           this will show you the existing ip address in record.
+    list            shows you existing record according to domain.
+    new             this will show you the new ip.
+    update          this performs update of ip address according to whatever is
+                    grabbed by check in script.
+
+Sample Usage:
+  update record: ${0##*/} -k ################ -d foo.bar.baz -o update
+
+  check record : ${0##*/} -k ################ -d foo.bar.baz -o check
+
+  update record: ${0##*/} -k ################ -d foo.bar.baz -o update
+
+  help         : ${0##*/} -h
+
 EOL
 }
 
@@ -38,17 +67,16 @@ failexit()
 
 ### the meaty nougat begins here.
 
+if [ $# -eq 1 ]; then
+  case "${1}" in
+    "-h"|"--help"|"help") usage; exit ;;
+  esac
+fi
+
 # test for wget & uuidgen
 [ ! -z $(which wget) ] && WGET="wget -O- -q " ||
   { printf -- "%s\n" "Missing wget"; failexit; }
 [ ! -z $(which uuidgen) ] || { printf -- "%s\n" "Missing uuidgen"; failexit; }
-
-## leaving this hashed out until needed
-## case "$(uname 2>/dev/null)" in
-##   'Linux') TMP_FILE=$(mktemp --tmpdir dhdns.$$.XXXXXXXXXX);;
-##   'Darwin') TMP_FILE=$(mktemp dhdns.$$.XXXXXXXXXX);;
-## esac
-## trap "rm -rf ${TMP_FILE}" 0 1 2 3 15
 
 # process $# if exist
 while [ $# -ne 0 ]; do
@@ -62,19 +90,29 @@ while [ $# -ne 0 ]; do
   shift;
 done
 
-# this section checks for $# hardcoded
-[ -z ${KEY} ] && KEY="<SET API KEY HERE TO AUTOMATE>"
-[ -z ${DOMAIN} ] && DOMAIN="<DOMAIN NAME TO UPDATE>"
+# this section checks for $# hardcoded and fails if both not hard coded or
+# specified from command line, api should remain hard coded but option is there
+# to remove it
+[ -z ${KEY} ] && KEY=""
+[ -z ${DOMAIN} ] && DOMAIN=""
 [ -z ${API} ] && API="https://api.dreamhost.com/"
+[ -z ${KEY} ] || [ -z ${DOMAIN} ] &&
+  { printf -- "%s\n" "Domain or Key not set." ""; failexit; }
 
-wanIP=$(wget http://ipecho.net/plain -O- -q) ||
-  { printf -- "%s\n" "cant grab wanip"; failexit; }
+wanIP()
+{
+  wget http://ipecho.net/plain -O- -q ||
+    { printf -- "%s\n" "cant grab wanip"; failexit; }
+}
 
 # set dns list api var
 LIST="&cmd=dns-list_records&"
 
-existIP=`${WGET} ${API}?key=${KEY}\&unique_id=$(uuidgen)${LIST} | \
-  grep ${DOMAIN} | awk '{ print $5 }'`
+existIP()
+{
+  ${WGET} ${API}?key=${KEY}\&unique_id=$(uuidgen)${LIST} | \
+    grep ${DOMAIN} | awk '{ print $5 }'
+}
 
 listINFO()
 {
@@ -83,7 +121,7 @@ listINFO()
 
 diffINFO()
 {
-  if [ ${wanIP} = ${existIP} ]; then
+  if [ $(wanIP) = $(existIP) ]; then
     printf -- "%s\n" "IP address is the same"
   else
     printf -- "%s\n" "IP address is different"
@@ -93,12 +131,12 @@ diffINFO()
 updateINFO()
 {
   # set dns add and remove
-  REMOVE="&cmd=dns-remove_record&record=${DOMAIN}&type=A&value=${existIP}&"
-  ADD="&cmd=dns-add_record&record=${DOMAIN}&type=A&value=${wanIP}&"
-  if [ ${wanIP} = ${existIP} ]; then
-    printf -- "%s\n" "IP address is the same"
+  ADD="&cmd=dns-add_record&record=${DOMAIN}&type=A&value=$(wanIP)&"
+  REMOVE="&cmd=dns-remove_record&record=${DOMAIN}&type=A&value=$(existIP)&"
+  if [ $(wanIP) = $(existIP) ]; then
+    printf -- "%s\n" "IP address is the same."
   else
-    printf -- "%s\n" "Updating ${DOMAIN} with IP ${wanIP} from ${existIP}."
+    printf -- "%s\n" "Updating ${DOMAIN} with IP $(wanIP) from $(existIP)."
     ${WGET} ${API}?key=${KEY}\&unique_id=$(uuidgen)${REMOVE}
     ${WGET} ${API}?key=${KEY}\&unique_id=$(uuidgen)${ADD}
     printf -- "%s\n" "Finished." "Record is now:"
@@ -106,11 +144,27 @@ updateINFO()
   fi
 }
 
+deleteINFO()
+{
+  REMOVE="&cmd=dns-remove_record&record=${DOMAIN}&type=A&value=$(existIP)&"
+  printf -- "%s\n" "Preparing to delete ${DOMAIN} record."
+  printf -- "%s\n" "Are you sure ?"
+  select YN in "Yes" "No"; do
+    case "${YN}" in
+      "Yes") printf -- "%s\n" "Deleting record:"
+        printf -- "%s\n" "$(listINFO)"
+        ${WGET} ${API}?key=${KEY}\&unique_id=$(uuidgen)${REMOVE}
+        exit ;;
+      "No") printf -- "%s\n" "Exiting" ""; failexit ;;
+    esac
+  done
+}
+
 case "${OPTION}" in
   "check") diffINFO ;;
   "update") updateINFO ;;
   "delete") deleteINFO ;;
-  "add") printf -- "%s\n" "adding soon" ;;
-  "exist") echo ${existIP} ;;
-  "list"|*) listINFO ;;
+  "exist") echo $(existIP) ;;
+  "list") listINFO ;;
+  *) failexit ;;
 esac
