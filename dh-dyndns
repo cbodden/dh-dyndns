@@ -61,35 +61,56 @@ while [ $# -ne 0 ]; do
   shift;
 done
 
-# this section assumes you have $# hardcoded
+# this section checks for $# hardcoded
 [ -z ${KEY} ] && KEY="<SET API KEY HERE TO AUTOMATE>"
 [ -z ${DOMAIN} ] && DOMAIN="<DOMAIN NAME TO UPDATE>"
 [ -z ${API} ] && API="https://api.dreamhost.com/"
-# lets also set the wan ip check address
-[ -z ${wanIP} ] && wanIP="http://ipecho.net/plain"
 
 wanIP=$(wget http://ipecho.net/plain -O- -q) ||
   { printf -- "%s\n" "cant grab wanip"; failexit; }
 
+# set dns list api var
+LIST="&cmd=dns-list_records&"
+
+existIP=`${WGET} ${API}?key=${KEY}\&unique_id=$(uuidgen)${LIST} | \
+  grep ${DOMAIN} | awk '{ print $5 }'`
+
 listINFO()
 {
-  ${WGET} ${API}?key=${KEY}\&unique_id=$(uuidgen)\&cmd=dns-list_records\& | \
+  ${WGET} ${API}?key=${KEY}\&unique_id=$(uuidgen)${LIST} | \
     grep ${DOMAIN}
 }
 
 diffINFO()
 {
-  if [ ${wanIP} = `listINFO | awk '{ print $5 }'` ]; then
+  if [ ${wanIP} = ${existIP} ]; then
     printf -- "%s\n" "IP address is the same"
   else
     printf -- "%s\n" "IP address is different"
   fi
 }
 
+updateINFO()
+{
+  # set dns add and remove
+  REMOVE="&cmd=dns-remove_record&record=${DOMAIN}&type=A&value=${existIP}&"
+  ADD="&cmd=dns-add_record&record=${DOMAIN}&type=A&value=${wanIP}&"
+  if [ ${wanIP} = ${existIP} ]; then
+    printf -- "%s\n" "IP address is the same"
+  else
+    printf -- "%s\n" "Updating ${DOMAIN} with IP ${wanIP} from ${existIP}."
+    ${WGET} ${API}?key=${KEY}\&unique_id=$(uuidgen)${REMOVE}
+    ${WGET} ${API}?key=${KEY}\&unique_id=$(uuidgen)${ADD}
+    printf -- "%s\n" "Finished." "Record is now:"
+    printf -- "%s\n" "$(listINFO)"
+  fi
+}
+
 case "${OPTION}" in
   "check") diffINFO ;;
-  "update") printf -- "%s\n" "adding soon" ;;
-  "delete") printf -- "%s\n" "adding soon" ;;
+  "update") updateINFO ;;
+  "delete") deleteINFO ;;
   "add") printf -- "%s\n" "adding soon" ;;
+  "exist") echo ${existIP} ;;
   "list"|*) listINFO ;;
 esac
