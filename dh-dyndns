@@ -43,11 +43,12 @@ failexit()
   { printf -- "%s\n" "Missing wget"; failexit; }
 [ ! -z $(which uuidgen) ] || { printf -- "%s\n" "Missing uuidgen"; failexit; }
 
-case "$(uname 2>/dev/null)" in
-  'Linux') TMP_FILE=$(mktemp --tmpdir dhdns.$$.XXXXXXXXXX);;
-  'Darwin') TMP_FILE=$(mktemp dhdns.$$.XXXXXXXXXX);;
-esac
-trap "rm -rf ${TMP_FILE}" 0 1 2 3 15
+## leaving this hashed out until needed
+## case "$(uname 2>/dev/null)" in
+##   'Linux') TMP_FILE=$(mktemp --tmpdir dhdns.$$.XXXXXXXXXX);;
+##   'Darwin') TMP_FILE=$(mktemp dhdns.$$.XXXXXXXXXX);;
+## esac
+## trap "rm -rf ${TMP_FILE}" 0 1 2 3 15
 
 # process $# if exist
 while [ $# -ne 0 ]; do
@@ -77,8 +78,7 @@ existIP=`${WGET} ${API}?key=${KEY}\&unique_id=$(uuidgen)${LIST} | \
 
 listINFO()
 {
-  ${WGET} ${API}?key=${KEY}\&unique_id=$(uuidgen)${LIST} | \
-    grep ${DOMAIN}
+  ${WGET} ${API}?key=${KEY}\&unique_id=$(uuidgen)${LIST} | grep ${DOMAIN}
 }
 
 diffINFO()
