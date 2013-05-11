@@ -11,7 +11,7 @@ This script uses your dreamhost api key (assuming it has dns access), to
 Usage
 ----
 
-Usage : dh-dyndns [option] <value>
+<pre><code>Usage : dh-dyndns [option] <value>
   Options:
     -h | --help   | help        shows this message
     -d | --domain | domain      domain which will be used (ex.: foo.bar.baz)
