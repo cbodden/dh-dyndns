@@ -9,12 +9,14 @@ NAME=$(basename $0)
 
 version()
 {
-  local VER="0.01"
-  printf -- "%s\n" "${NAME} version ${VER}"
-  printf -- "%s\n" "Copyright (C) 2013 cesar@pissedoffadmins.com"
-  printf -- "%s\n" "This program comes with ABSOLUTELY NO WARRANTY."
-  printf -- "%s\n" "This is free software, and you are welcome to redistribute it."
-  printf -- "%s\n"
+  local VER="0.2"
+  cat <<EOL
+${NAME} version ${VER}
+Copyright (C) 2013 cesar@pissedoffadmins.com
+This program comes with ABSOLUTELY NO WARRANTY.
+This is free software, and you are welcome to redistribute it.
+
+EOL
 }
 
 descrip()
