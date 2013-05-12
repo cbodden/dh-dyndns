@@ -2,7 +2,7 @@ dh-dyndns
 ====
 
 This script uses your dreamhost api key (assuming it has dns access), to
-<br>either check, delete, list, or update your ip address for a give record
+<br>either check, delete, list, or update your ip address for a given record
 <br>in dreamhost. Makes dynamic dns possible with dreamhost except for the
 <br>four hour time to live (ttl). If you need a faster dynamic dns service,
 <br>try DynDNS.
