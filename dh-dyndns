@@ -9,7 +9,7 @@ NAME=$(basename $0)
 
 version()
 {
-  local VER="0.2"
+  local VER="0.4"
   cat <<EOL
 ${NAME} version ${VER}
 Copyright (C) 2013 cesar@pissedoffadmins.com
@@ -55,7 +55,11 @@ Sample Usage:
 
   check record : ${0##*/} -k ################ -d foo.bar.baz -o check
 
-  update record: ${0##*/} -k ################ -d foo.bar.baz -o update
+  delete record: ${0##*/} -k ################ -d foo.bar.baz -o delete
+
+  list  records: ${0##*/} -k ################ -d foo.bar.baz -o list
+
+  new record   : ${0##*/} -k ################ -d new.baz -o new
 
   help         : ${0##*/} -h
 
