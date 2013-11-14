@@ -103,7 +103,8 @@ done
 
 wanIP()
 {
-  wget http://ipecho.net/plain -O- -q ||
+  # wget http://ipecho.net/plain -O- -q ||
+  wget http://icanhazip.com -O- -q ||
     { printf -- "%s\n" "cant grab wanip"; failexit; }
 }
 
